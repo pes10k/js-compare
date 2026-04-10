@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from typing import Optional, TextIO
 
 TEMPLATES_DIR: Path = WORKSPACE_PATH / "templates"
-JS_SCRIPT = Path("js_to_graphml.js")
+JS_SCRIPT = Path("js2graphml.js")
 SCRIPT_TEMPLATE: Path = TEMPLATES_DIR / JS_SCRIPT
 
 def install_tool(tool_dir: Path) -> Path:
@@ -53,8 +53,8 @@ def check_tool(tool_dir: Path) -> bool:
         return False
     return True
 
-def run_tool(tool_dir: Path, code: Path, node_types: list[AstNodeType],
-             output: Optional[Path]=None) -> Optional[str]:
+def run_tool(tool_dir: Path, code: Path,
+             node_types: list[AstNodeType]) -> Optional[str]:
     if not tool_dir.is_dir():
         msg = f"Unable to run tool at {tool_dir}. No directory exists."
         raise ValueError(msg)
@@ -69,18 +69,15 @@ def run_tool(tool_dir: Path, code: Path, node_types: list[AstNodeType],
         raise ValueError(msg)
 
     cmd: list[str | Path] = ["node", script_path, code, *node_types]
-    if output is None:
-        capture_output = True
-        stdout = None
-    else:
-        capture_output = False
-        stdout = output.open("w")
+    capture_output = True
+    stdout = None
+
     try:
-        rs = run(cmd, cwd=tool_dir, capture_output=capture_output, stdout=stdout,
-                encoding="utf8", check=True)
+        rs = run(cmd, cwd=tool_dir, capture_output=capture_output,
+                 stdout=stdout, encoding="utf8", check=True)
     except CalledProcessError as err:
         sys.stderr.write(err.stderr)
         raise err
-    if capture_output:
-        return rs.stdout
-    return None
+    if len(rs.stderr.strip()) > 0:
+        print(rs.stderr, file=sys.stderr)
+    return rs.stdout

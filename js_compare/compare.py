@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING
 from networkx import read_graphml
 
 from js_compare.ast_tree import ASTTree
-from js_compare.graphml import check_tool, install_tool, run_tool
+from js_compare.js2graphml import check_tool, install_tool, run_tool
 
 if TYPE_CHECKING:
     from typing import Any, IO

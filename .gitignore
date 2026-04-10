@@ -161,4 +161,4 @@ cython_debug/
 
 .DS_Store
 .vscode/
-workspace/graphml_tool
+workspace/js2graphml

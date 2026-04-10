@@ -184,9 +184,43 @@ for (const aCategory of nodeCategoriesToInclude) {
   nodeTypesToInclude = nodeTypesToInclude.union(nodeTypesInCategory);
 }
 
+const nodeMapping = Object.create(null);
+let nodeCount = 0;
+const modes = {
+  throwIfFound: "if found",
+  throwIfNotFound: "if not found"
+};
+const idForNode = (node, mode) => {
+  const key = `${node.type}:${node.start}:${node.end}`;
+  const currentValue = nodeMapping[key];
+
+  if (currentValue === undefined && mode === modes.throwIfNotFound) {
+    throw new Error('Node id DOES NOT EXIST.\n' + JSON.stringify(node));
+  }
+
+  if (currentValue !== undefined && mode === mode === modes.throwIfFound) {
+    throw new Error('Node id EXISTS.\n' + JSON.stringify(node));
+  }
+
+  if (currentValue !== undefined) {
+    return currentValue;
+  }
+
+  nodeCount += 1;
+  const nodeId = `n${nodeCount}`;
+  nodeMapping[key] = nodeId;
+  return nodeId;
+};
+
+const idForParentEdge = (node) => {
+  const nodeId = idForNode(node, modes.throwIfNotFound);
+  return "e" + nodeId.slice("1");
+};
+
 traverse(ast, {
   enter(path) {
-    const nodeType = path.node.type;
+    const node = path.node;
+    const nodeType = node.type;
     // Do not include comment nodes, or other nodes that do not have
     // structural significance in the program.
     if (neverTypes.has(nodeType)) {
@@ -197,11 +231,9 @@ traverse(ast, {
       return;
     }
 
-    const nodeStart = path.node.start;
-    const nodeId = `${nodeType}_${nodeStart}`;
-
-    const node = graph.ele("node", { id: nodeId });
-    node.ele("data", { key: labelKey }).txt(nodeType);
+    const nodeId = idForNode(path.node, modes.throwIfFound);
+    const graphNode = graph.ele("node", { id: nodeId });
+    graphNode.ele("data", { key: labelKey }).txt(nodeType);
 
     if (!path.parentPath) {
       return;
@@ -215,15 +247,12 @@ traverse(ast, {
       }
     }
 
-    const parentType = parentPath.node.type;
-    const parentStart = parentPath.node.start;
-    const parentId = `${parentType}_${parentStart}`;
-    if (parentStart === nodeStart) {
-      return;
-    }
+    const parentNode = parentPath.node;
+    const parentNodeId = idForNode(parentNode, modes.throwIfNotFound);
+    const parentEdgeId = idForParentEdge(node);
     graph.ele("edge", {
-      id: `e_${parentId}_${nodeId}`,
-      source: parentId,
+      id: parentEdgeId,
+      source: parentNodeId,
       target: nodeId,
     });
   },

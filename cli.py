@@ -37,7 +37,7 @@ parser.add_argument("-o", "--output",
     type=FileType("w", encoding="utf-8"))
 parser.add_argument("-t", "--types",
     choices=ast_options,
-    default=["loose"],
+    default=["all"],
     help="Which AST nodes to include in the code graph when comparing code "
          "units. You can also use the special cases 'all' to "
          "include all AST nodes, or 'loose', to include just the following "
